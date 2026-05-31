@@ -659,6 +659,56 @@
 
           </div><!-- /section appearance -->
 
+          <!-- ── Section: sub-workers ── -->
+          <div v-show="activeSection === 'sub-workers'">
+            <div class="settings-card">
+              <div class="card-title">{{ $t('subWorkerManage') }}</div>
+              <div class="card-content">
+                <div class="sub-worker-toolbar">
+                  <span class="domain-count">{{ subWorkers.length }} {{ $t('subWorkerManage') }}</span>
+                  <el-button type="primary" size="small" @click="subWorkerDialogShow = true">
+                    <Icon icon="mingcute:add-line" width="14" height="14" style="margin-right: 4px;" />
+                    {{ $t('subWorkerAdd') }}
+                  </el-button>
+                </div>
+
+                <div v-if="subWorkers.length === 0" class="domain-empty">{{ $t('subWorkerEmpty') }}</div>
+
+                <div v-else class="domain-list">
+                  <div v-for="sw in subWorkers" :key="sw.id" class="domain-row">
+                    <div class="sw-info">
+                      <span class="domain-name">{{ sw.name }}</span>
+                      <span class="sw-domains-tag" v-for="d in sw.domains" :key="d">{{ d }}</span>
+                    </div>
+                    <div class="domain-actions">
+                      <el-tag :type="sw.status ? 'success' : 'info'" size="small">
+                        {{ sw.status ? $t('subWorkerEnabled') : $t('subWorkerDisabled') }}
+                      </el-tag>
+                      <el-switch
+                        :model-value="!!sw.status"
+                        size="small"
+                        @change="toggleSubWorkerStatus(sw)"
+                      />
+                      <el-button size="small" type="danger" plain @click="deleteSubWorker(sw)">
+                        <Icon icon="mingcute:delete-2-line" width="14" height="14" />
+                      </el-button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /section sub-workers -->
+
+          <!-- ── Section: servers (standalone only) ── -->
+          <div v-show="activeSection === 'servers'">
+            <div class="settings-card">
+              <div class="card-title">{{ $t('serverManage') }}</div>
+              <div class="card-content">
+                <ServerManager />
+              </div>
+            </div>
+          </div><!-- /section servers -->
+
           <!-- ── Section: about ── -->
           <div v-show="activeSection === 'about'">
             <div class="settings-card about">
@@ -1066,6 +1116,32 @@
           <el-button type="primary" style="width: 100%;" :loading="settingLoading" @click="saveSenderDomainBlacklist">{{ $t('save') }}</el-button>
         </div>
       </el-dialog>
+
+      <!-- Sub-worker add dialog -->
+      <el-dialog v-model="subWorkerDialogShow" :title="t('subWorkerAdd')" width="420" @closed="resetSubWorkerForm">
+        <div class="sub-worker-form">
+          <div class="setup-field">
+            <label>{{ $t('subWorkerName') }}</label>
+            <el-input v-model="subWorkerForm.name" :placeholder="$t('subWorkerNamePlaceholder')" />
+          </div>
+          <div class="setup-field">
+            <label>{{ $t('subWorkerUrl') }}</label>
+            <el-input v-model="subWorkerForm.url" :placeholder="$t('subWorkerUrlPlaceholder')" />
+          </div>
+          <div class="setup-field">
+            <label>{{ $t('subWorkerToken') }}</label>
+            <el-input v-model="subWorkerForm.apiToken" :placeholder="$t('subWorkerTokenPlaceholder')" show-password />
+          </div>
+          <div class="sub-worker-form-actions">
+            <el-button @click="testSubWorker" :loading="subWorkerTesting" :disabled="!subWorkerForm.url || !subWorkerForm.apiToken">
+              {{ $t('subWorkerTestConnect') }}
+            </el-button>
+            <el-button type="primary" @click="addSubWorker" :loading="subWorkerAdding" :disabled="!subWorkerForm.url || !subWorkerForm.apiToken || !subWorkerForm.name">
+              {{ $t('save') }}
+            </el-button>
+          </div>
+        </div>
+      </el-dialog>
   </div>
 </template>
 
@@ -1083,25 +1159,36 @@ import loading from "@/components/loading/index.vue";
 import {getTextWidth} from "@/utils/text.js";
 import {useI18n} from 'vue-i18n';
 import axios from "axios";
+import {useServerStore as useServerStoreRef} from "@/store/server.js";
+import ServerManager from "@/components/server-manager/index.vue";
+import {subWorkerList, subWorkerAdd as subWorkerAddApi, subWorkerTest as subWorkerTestApi, subWorkerDelete as subWorkerDeleteApi, subWorkerSetStatus} from "@/request/sub-worker.js";
 
 defineOptions({
   name: 'sys-setting'
 })
 
-const currentVersion = 'v2.0.1'
+const currentVersion = 'v3.1.0'
 
 /* ── Settings navigation ── */
 const activeSection = ref('website')
 
-const sections = computed(() => [
-  { id: 'website',     icon: 'mingcute:home-4-line',      label: 'websiteSetting' },
-  { id: 'security',    icon: 'mingcute:shield-line',       label: 'securitySetting' },
-  { id: 'registration',icon: 'mingcute:user-add-line',     label: 'emailAddressSetting' },
-  { id: 'domain',      icon: 'mingcute:world-2-line',      label: 'domainManagement' },
-  { id: 'integration', icon: 'mingcute:plug-2-line',       label: 'integration' },
-  { id: 'appearance',  icon: 'mingcute:palette-line',      label: 'appearance' },
-  { id: 'about',       icon: 'mingcute:information-line',  label: 'about' },
-])
+const serverStoreRef = useServerStoreRef()
+const sections = computed(() => {
+  const list = [
+    { id: 'website',     icon: 'mingcute:home-4-line',      label: 'websiteSetting' },
+    { id: 'security',    icon: 'mingcute:shield-line',       label: 'securitySetting' },
+    { id: 'registration',icon: 'mingcute:user-add-line',     label: 'emailAddressSetting' },
+    { id: 'domain',      icon: 'mingcute:world-2-line',      label: 'domainManagement' },
+    { id: 'integration', icon: 'mingcute:plug-2-line',       label: 'integration' },
+    { id: 'sub-workers', icon: 'mingcute:server-line',       label: 'subWorkerManage' },
+    { id: 'appearance',  icon: 'mingcute:palette-line',      label: 'appearance' },
+  ]
+  if (serverStoreRef.isStandalone) {
+    list.push({ id: 'servers', icon: 'mingcute:cloud-line', label: 'serverManage' })
+  }
+  list.push({ id: 'about', icon: 'mingcute:information-line', label: 'about' })
+  return list
+})
 const hasUpdate = ref(false)
 let getUpdateErrorCount = 1;
 const {t, locale} = useI18n();
@@ -1135,6 +1222,11 @@ const keywordBlacklistShow = ref(false)
 const keywordBlacklistData = ref([])
 const senderDomainBlacklistShow = ref(false)
 const senderDomainBlacklistData = ref([])
+const subWorkerDialogShow = ref(false)
+const subWorkerTesting = ref(false)
+const subWorkerAdding = ref(false)
+const subWorkers = ref([])
+const subWorkerForm = reactive({ name: '', url: '', apiToken: '' })
 const domainManagementShow = ref(false)
 const managedDomainsData = ref([])
 const newDomainInput = ref('')
@@ -1419,6 +1511,46 @@ const resendList = computed(() => {
 
   return list;
 });
+
+function loadSubWorkers() {
+  subWorkerList().then(list => { subWorkers.value = list || [] }).catch(() => {})
+}
+loadSubWorkers()
+
+function resetSubWorkerForm() {
+  subWorkerForm.name = ''
+  subWorkerForm.url = ''
+  subWorkerForm.apiToken = ''
+}
+
+function testSubWorker() {
+  subWorkerTesting.value = true
+  subWorkerTestApi({ url: subWorkerForm.url, apiToken: subWorkerForm.apiToken }).then(data => {
+    const domains = data?.domains || []
+    ElMessage({ message: t('subWorkerTestSuccess', { count: domains.length }), type: 'success', plain: true })
+  }).catch(() => {
+    ElMessage({ message: t('subWorkerTestFail'), type: 'error', plain: true })
+  }).finally(() => { subWorkerTesting.value = false })
+}
+
+function addSubWorker() {
+  subWorkerAdding.value = true
+  subWorkerAddApi(subWorkerForm).then(() => {
+    ElMessage({ message: t('subWorkerAddSuccess'), type: 'success', plain: true })
+    subWorkerDialogShow.value = false
+    loadSubWorkers()
+  }).catch(() => {}).finally(() => { subWorkerAdding.value = false })
+}
+
+function deleteSubWorker(sw) {
+  ElMessageBox.confirm(t('subWorkerDeleteConfirm'), { type: 'warning' }).then(() => {
+    subWorkerDeleteApi(sw.id).then(() => { loadSubWorkers() })
+  }).catch(() => {})
+}
+
+function toggleSubWorkerStatus(sw) {
+  subWorkerSetStatus(sw.id, sw.status ? 0 : 1).then(() => { loadSubWorkers() })
+}
 
 function getUpdate() {
   if (getUpdateErrorCount > 5 || !getUpdateErrorCount) return
@@ -2660,6 +2792,52 @@ form .el-button {
   color: var(--el-text-color-secondary);
   padding: 20px 0;
   font-size: 13px;
+}
+
+.sub-worker-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sw-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.sw-domains-tag {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 500;
+}
+
+.sub-worker-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sub-worker-form .setup-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-regular);
+  margin-bottom: 4px;
+}
+
+.sub-worker-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .domain-count {

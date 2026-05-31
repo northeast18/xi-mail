@@ -2,6 +2,7 @@ import {createRouter, createWebHistory} from 'vue-router'
 import NProgress from 'nprogress';
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
+import {useServerStore} from "@/store/server.js";
 import {cvtR2Url} from "@/utils/convert.js";
 
 const routes = [
@@ -70,6 +71,11 @@ const routes = [
         component: () => import('@/views/login/index.vue')
     },
     {
+        path: '/setup',
+        name: 'setup',
+        component: () => import('@/views/setup/index.vue')
+    },
+    {
         path: '/test',
         name: 'test',
         component: () => import('@/views/test/index.vue')
@@ -106,9 +112,18 @@ router.beforeEach((to, from, next) => {
         NProgress.start()
     }, first ? 200 : 100)
 
-    const token = localStorage.getItem('token')
+    const serverStore = useServerStore()
 
-    if (!token && to.name !== 'login') {
+    if (serverStore.needSetup && to.name !== 'setup') {
+        return next({ name: 'setup' })
+    }
+    if (!serverStore.needSetup && to.name === 'setup') {
+        return next({ name: 'login' })
+    }
+
+    const token = serverStore.getToken()
+
+    if (!token && to.name !== 'login' && to.name !== 'setup') {
         return next({name: 'login'})
     }
 

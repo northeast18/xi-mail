@@ -134,6 +134,7 @@ import {useI18n} from "vue-i18n";
 import router from "@/router/index.js";
 import {ElMessageBox} from "element-plus";
 import {accountList as fetchAccountList} from "@/request/account.js";
+import {useServerStore} from "@/store/server.js";
 
 defineExpose({
   open,
@@ -440,7 +441,8 @@ async function sendEmail() {
       position: 'bottom-right'
     })
     if (e.code === 401) {
-      localStorage.removeItem('token');
+      const serverStore = useServerStore();
+      serverStore.clearToken(serverStore.activeServerId);
       router.replace('/login');
     }
     show.value = true

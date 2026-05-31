@@ -1,6 +1,7 @@
 import {useUserStore} from "@/store/user.js";
 import {useSettingStore} from "@/store/setting.js";
 import {useAccountStore} from "@/store/account.js";
+import {useServerStore} from "@/store/server.js";
 import {loginUserInfo} from "@/request/my.js";
 import {permsToRouter} from "@/perm/perm.js";
 import router from "@/router";
@@ -13,8 +14,11 @@ export async function init() {
     const settingStore = useSettingStore();
     const userStore = useUserStore();
     const accountStore = useAccountStore();
+    const serverStore = useServerStore();
 
-    const token = localStorage.getItem('token');
+    serverStore.init();
+
+    const token = serverStore.getToken();
     if (!settingStore.lang) {
         let lang = navigator.language.split('-')[0]
         lang = lang === 'zh' ? lang : 'en'
@@ -22,6 +26,11 @@ export async function init() {
     }
 
     i18n.global.locale.value = settingStore.lang
+
+    if (serverStore.needSetup) {
+        removeLoading();
+        return;
+    }
 
     let setting = null;
 
@@ -42,6 +51,11 @@ export async function init() {
             accountStore.currentAccount = user.account;
             userStore.user = user;
 
+            if (user.lang) {
+                settingStore.lang = user.lang;
+                i18n.global.locale.value = user.lang;
+            }
+
             const routers = permsToRouter(user.permKeys);
             routers.forEach(routerData => {
                 router.addRoute('layout', routerData);
@@ -49,10 +63,14 @@ export async function init() {
         }
 
     } else {
-        setting = await websiteConfig();
-        settingStore.settings = setting;
-        settingStore.domainList = setting.domainList;
-        document.title = setting.title;
+        try {
+            setting = await websiteConfig();
+            settingStore.settings = setting;
+            settingStore.domainList = setting.domainList;
+            document.title = setting.title;
+        } catch {
+            // standalone mode — server may not be reachable yet
+        }
     }
 
     removeLoading();

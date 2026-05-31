@@ -92,6 +92,8 @@ import {hasPerm} from "@/perm/perm.js"
 import {useI18n} from "vue-i18n";
 import {setExtend} from "@/utils/day.js"
 import i18n from "@/i18n/index.js"
+import {useServerStore} from "@/store/server.js"
+import {saveLang} from "@/request/my.js"
 
 const {t} = useI18n();
 const route = useRoute();
@@ -181,6 +183,7 @@ function toggleLang() {
   settingStore.lang = next
   i18n.global.locale.value = next
   setExtend(next === 'zh' ? 'zh-cn' : 'en')
+  saveLang(next).catch(() => {})
 }
 
 function openSend() { uiStore.writerRef.open() }
@@ -188,8 +191,9 @@ function changeAside() { uiStore.asideShow = !uiStore.asideShow }
 
 function clickLogout() {
   logoutLoading.value = true
+  const serverStore = useServerStore()
   logout().then(() => {
-    localStorage.removeItem("token")
+    serverStore.clearToken(serverStore.activeServerId)
     router.replace('/login')
   }).finally(() => {
     logoutLoading.value = false

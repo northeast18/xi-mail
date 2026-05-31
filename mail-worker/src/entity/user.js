@@ -18,6 +18,7 @@ const user = sqliteTable('user', {
 	sendCount: text('send_count').default(0),
 	regKeyId: integer('reg_key_id').default(0).notNull(),
 	displayId: text('display_id').default('').notNull(),
-	isDel: integer('is_del').default(0).notNull()
+	isDel: integer('is_del').default(0).notNull(),
+	lang: text('lang').default('').notNull()
 });
 export default user

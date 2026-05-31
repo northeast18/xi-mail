@@ -58,7 +58,10 @@ const requirePerms = [
 	'/regKey/list',
 	'/regKey/delete',
 	'/regKey/clearNotUse',
-	'/regKey/history'
+	'/regKey/history',
+	'/sub-worker/list',
+	'/sub-worker/add',
+	'/sub-worker/test',
 ];
 
 const premKey = {
@@ -81,8 +84,8 @@ const premKey = {
 	'user:delete': ['/user/delete','/user/deleteAccount'],
 	'all-email:query': ['/allEmail/list','/allEmail/latest'],
 	'all-email:delete': ['/allEmail/delete','/allEmail/batchDelete'],
-	'setting:query': ['/setting/query', '/setting/globalToken'],
-	'setting:set': ['/setting/set', '/setting/setBackground','/setting/deleteBackground', '/setting/globalToken/enabled', '/setting/globalToken/generate'],
+	'setting:query': ['/setting/query', '/setting/globalToken', '/sub-worker/list'],
+	'setting:set': ['/setting/set', '/setting/setBackground','/setting/deleteBackground', '/setting/globalToken/enabled', '/setting/globalToken/generate', '/sub-worker/add', '/sub-worker/test'],
 	'analysis:query': ['/analysis/echarts'],
 	'reg-key:add': ['/regKey/add'],
 	'reg-key:query': ['/regKey/list','/regKey/history'],

@@ -66,6 +66,7 @@ const userService = {
 		user.permKeys = permKeys;
 		user.role = roleRow;
 		user.type = userRow.type;
+		user.lang = userRow.lang || '';
 
 		if (c.env.admin === userRow.email) {
 			user.role = constant.ADMIN_ROLE
@@ -75,6 +76,10 @@ const userService = {
 		return user;
 	},
 
+
+	async updateLang(c, userId, lang) {
+		await orm(c).update(user).set({ lang }).where(eq(user.userId, userId)).run();
+	},
 
 	async resetPassword(c, params, userId) {
 

@@ -37,6 +37,7 @@ const dbInit = {
 		await this.v3_6DB(c);
 		await this.v3_7DB(c);
 		await this.v3_8DB(c);
+		await this.v3_9DB(c);
 		await settingService.refresh(c);
 		return c.text('success');
 	},
@@ -158,6 +159,25 @@ const dbInit = {
 	async v3_8DB(c) {
 		try {
 			await c.env.db.prepare(`ALTER TABLE setting ADD COLUMN layout_mode TEXT NOT NULL DEFAULT 'default';`).run();
+		} catch (e) {}
+	},
+
+	async v3_9DB(c) {
+		try {
+			await c.env.db.prepare(`ALTER TABLE user ADD COLUMN lang TEXT NOT NULL DEFAULT '';`).run();
+		} catch (e) {}
+		try {
+			await c.env.db.prepare(`
+				CREATE TABLE IF NOT EXISTS sub_worker (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					name TEXT NOT NULL,
+					url TEXT NOT NULL,
+					api_token TEXT NOT NULL,
+					domains TEXT NOT NULL DEFAULT '[]',
+					status INTEGER NOT NULL DEFAULT 1,
+					create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+				)
+			`).run();
 		} catch (e) {}
 	},
 

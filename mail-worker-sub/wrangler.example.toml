@@ -1,0 +1,15 @@
+name = "xi-mail-sub"
+main = "src/index.js"
+compatibility_date = "2025-06-04"
+
+[[d1_databases]]
+binding = "db"
+database_name = "xi-mail-sub"
+database_id = "<YOUR_D1_DATABASE_ID>"
+
+[triggers]
+crons = ["0 16 * * *"]
+
+[vars]
+api_token = "<YOUR_API_TOKEN_MIN_32_CHARS>"
+domain = ["sub-domain.com"]

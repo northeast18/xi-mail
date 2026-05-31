@@ -1,7 +1,9 @@
 import KvConst from '../const/kv-const';
 import setting from '../entity/setting';
+import subWorker from '../entity/sub-worker';
 import orm from '../entity/orm';
 import {verifyRecordType} from '../const/entity-const';
+import { eq } from 'drizzle-orm';
 import fileUtils from '../utils/file-utils';
 import r2Service from './r2-service';
 import constant from '../const/constant';
@@ -259,8 +261,26 @@ const settingService = {
 		managedDomains: settingRow.managedDomains || [],
 		colorTheme: settingRow.colorTheme || 'indigo',
 		loginTemplate: settingRow.loginTemplate || 'gradient',
-		layoutMode: settingRow.layoutMode || 'default'
+		layoutMode: settingRow.layoutMode || 'default',
+		subWorkers: await this.getSubWorkersSafe(c),
 		};
+	},
+
+	async getSubWorkersSafe(c) {
+		try {
+			const rows = await orm(c).select({
+				id: subWorker.id,
+				name: subWorker.name,
+				domains: subWorker.domains,
+				status: subWorker.status,
+			}).from(subWorker).where(eq(subWorker.status, 1)).all();
+			return rows.map(r => ({
+				...r,
+				domains: (() => { try { return JSON.parse(r.domains); } catch { return []; } })(),
+			}));
+		} catch {
+			return [];
+		}
 	}
 };
 

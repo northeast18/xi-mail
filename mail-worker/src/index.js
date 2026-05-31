@@ -20,7 +20,10 @@ export default {
 			 return await kvObjService.toObjResp( { env }, url.pathname.substring(1));
 		 }
 
-		return env.assets.fetch(req);
+		if (env.assets) return env.assets.fetch(req);
+		return new Response('Xi-Mail API is running. Frontend is deployed separately.', {
+			status: 200, headers: { 'Content-Type': 'text/plain' }
+		});
 	},
 	email: email,
 	async scheduled(c, env, ctx) {

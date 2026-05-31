@@ -41,6 +41,18 @@
           </div>
         </Transition>
 
+        <!-- Server selector (standalone mode with multiple servers) -->
+        <div v-if="serverStore.isStandalone && serverStore.servers.length > 1" class="server-selector">
+          <el-select v-model="activeServerSelect" size="default" @change="onServerChange">
+            <el-option
+              v-for="s in serverStore.servers"
+              :key="s.id"
+              :label="s.name"
+              :value="s.id"
+            />
+          </el-select>
+        </div>
+
         <!-- Tab switcher -->
         <div class="tab-bar" v-if="settingStore.settings.register === 0">
           <button :class="['tab', show === 'login' && 'active']" @click="show = 'login'">{{ $t('loginBtn') }}</button>
@@ -235,13 +247,25 @@ import {loginUserInfo} from "@/request/my.js";
 import {permsToRouter} from "@/perm/perm.js";
 import {useI18n} from "vue-i18n";
 import {oauthBindUser, oauthLinuxDoLogin} from "@/request/ouath.js";
+import {useServerStore} from "@/store/server.js";
+import {websiteConfig} from "@/request/setting.js";
 
 const {t} = useI18n();
 const accountStore = useAccountStore();
 const userStore = useUserStore();
 const uiStore = useUiStore();
 const settingStore = useSettingStore();
+const serverStore = useServerStore();
 const loginTemplate = computed(() => settingStore.settings?.loginTemplate || 'gradient');
+const activeServerSelect = ref(serverStore.activeServerId);
+function onServerChange(id) {
+  serverStore.setActiveServer(id);
+  websiteConfig().then(s => {
+    settingStore.settings = s;
+    settingStore.domainList = s.domainList;
+    suffix.value = s.domainList?.[0] || '';
+  }).catch(() => {});
+}
 const loginLoading = ref(false);
 const bindLoading = ref(false);
 const oauthLoading = ref(false);
@@ -261,6 +285,15 @@ const suffixPopperClass = computed(() =>
 );
 const registerLoading = ref(false);
 suffix.value = domainList[0];
+
+if (serverStore.isStandalone && !settingStore.settings?.title && serverStore.servers.length > 0) {
+  websiteConfig().then(s => {
+    settingStore.settings = s;
+    settingStore.domainList = s.domainList;
+    if (s.domainList?.[0]) suffix.value = s.domainList[0];
+  }).catch(() => {});
+}
+
 const verifyShow = ref(false);
 let verifyToken = '';
 let turnstileId = null;
@@ -338,7 +371,8 @@ const submit = () => {
 };
 
 async function saveToken(token) {
-  localStorage.setItem('token', token);
+  const sid = serverStore.activeServer?.id || 'local'
+  serverStore.setToken(sid, token)
   const user = await loginUserInfo();
   accountStore.currentAccountId = user.account.accountId;
   accountStore.currentAccount = user.account;
@@ -631,6 +665,13 @@ function submitRegister() {
     font-size: 12.5px;
     color: var(--el-text-color-secondary);
   }
+}
+
+/* ── Server selector ── */
+.server-selector {
+  margin-bottom: 12px;
+
+  :deep(.el-select) { width: 100%; }
 }
 
 /* ── Tab bar ── */
