@@ -1,4 +1,7 @@
 const en = {
+	invalidCredentials: 'Incorrect email or password',
+	tooManyAttempts: 'Too many attempts. Please try again later.',
+	accountUnavailable: 'This email address is unavailable',
 	IncorrectPwd: 'Incorrect password',
 	addAccountDisabled: 'Add Email Address feature is disabled',
 	regDisabled: 'Sign up is disabled',
@@ -20,7 +23,8 @@ const en = {
 	daySendLack: 'Not enough remaining sends today',
 	totalSendLack: 'Not enough total remaining sends',
 	senderAccountNotExist: 'Sender email does not exist',
-	noResendToken: 'Resend API token not configured',
+	noResendToken: 'No sending service (Resend / QueenSMTP) configured for this domain',
+	queenNoAttachment: 'QueenSMTP does not support attachments. Remove them or configure Resend for this domain',
 	sendEmailNotCurUser: 'Sender email does not belong to current user',
 	notExistEmailReply: 'Mail does not exist and cannot be replied to',
 	imageAttLimit: 'The maximum number of image attachments is 10',

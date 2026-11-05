@@ -1,4 +1,7 @@
 const zh = {
+	invalidCredentials: '邮箱或密码错误',
+	tooManyAttempts: '尝试过于频繁，请稍后重试',
+	accountUnavailable: '该邮箱暂不可用',
 	IncorrectPwd: '密码输入错误',
 	addAccountDisabled: '添加邮箱功能已关闭',
 	regDisabled: '注册功能已关闭',
@@ -20,7 +23,8 @@ const zh = {
 	daySendLack: '当日剩余发送次数不足',
 	totalSendLack: '剩余发送次数不足',
 	senderAccountNotExist: '发件人邮箱不存在',
-	noResendToken: 'Resend未配置，只能给站内邮箱发件',
+	noResendToken: '该域名未配置发件服务（Resend / QueenSMTP），只能给站内邮箱发件',
+	queenNoAttachment: 'QueenSMTP 不支持附件，请移除附件或为该域名配置 Resend',
 	sendEmailNotCurUser: '发件人邮箱非当前用户所有',
 	notExistEmailReply: '邮件不存在无法回复',
 	imageAttLimit: '图片不能超过10个',
