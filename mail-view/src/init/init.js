@@ -18,7 +18,7 @@ export async function init() {
 
     serverStore.init();
 
-    const token = serverStore.getToken();
+    const token = location.pathname === '/share' ? null : serverStore.getToken();
     if (!settingStore.lang) {
         let lang = navigator.language.split('-')[0]
         lang = lang === 'zh' ? lang : 'en'
@@ -47,6 +47,7 @@ export async function init() {
         document.title = setting.title;
 
         if (user) {
+            settingStore.domainList = user.domainList || setting.domainList;
             accountStore.currentAccountId = user.account.accountId;
             accountStore.currentAccount = user.account;
             userStore.user = user;
